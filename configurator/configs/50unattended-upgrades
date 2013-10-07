@@ -1,0 +1,18 @@
+// Automatically upgrade packages from these (origin:archive) pairs
+Unattended-Upgrade::Allowed-Origins {
+        "${distro_id}:${distro_codename}-security";
+        "${distro_id}:${distro_codename}-updates";
+//      "${distro_id}:${distro_codename}-proposed";
+        "${distro_id}:${distro_codename}-backports";
+};
+
+// List of packages to not update
+//Unattended-Upgrade::Package-Blacklist {
+//};
+
+// Do automatic removal of new unused dependencies after the upgrade
+// (equivalent to apt-get autoremove)
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+
+// Use apt bandwidth limit feature
+Acquire::http::Dl-Limit "1500";

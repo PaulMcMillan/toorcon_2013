@@ -5,14 +5,19 @@ import os
 from fabric.api import *
 
 env.use_ssh_config = True
-env.hosts = ['s1.survey.tx.ai', 's2.survey.tx.ai', 's3.survey.tx.ai']
+env.roledefs['survey'] = [
+    's1.survey.tx.ai',
+    's2.survey.tx.ai',
+    's3.survey.tx.ai',
+    ]
 
-DEBS = ['ntp',
+DEBS = ['emacs23-nox',
+        'unattended-upgrades',
+        'ntp',  # turns out to be more important than you'd think
         'collectd',
-        'emacs23-nox',
-        'curl',
         'nginx',
         'libhiredis*',
+        'ethtool',
         ]
 
 @task
@@ -24,6 +29,16 @@ def install_debs():
     sudo('apt-get autoremove -y')
 
 @task
+def configure_upgrades():
+    "Configure unattended upgrades"
+    put('configs/50unattended-upgrades',
+        '/etc/apt/apt.conf.d/50unattended-upgrades',
+        use_sudo=True)
+    put('configs/unattended-upgrades-10periodic',
+        '/etc/apt/apt.conf.d/10periodic',
+        use_sudo=True)
+
+@task
 def set_timezone():
     "Set timezone to Etc/UTC."
     sudo('echo "Etc/UTC" > /etc/timezone')
@@ -31,7 +46,7 @@ def set_timezone():
 
 @task
 def install_pip():
-    "Install latest setuptools and pip from upstream."
+    "Install latest setuptools and pip."
     sudo('wget https://bitbucket.org/pypa/setuptools/raw/bootstrap/'
          'ez_setup.py -O - | python')
     run('rm setuptools-*.tar.gz')
@@ -59,7 +74,7 @@ def configure_nginx():
     sudo('service nginx restart')
 
 @task
-@runs_once
+@runs_once  # do this once, locally
 def compile_masscan():
     "Download and compile latest masscan"
     try:
@@ -94,20 +109,23 @@ def copy_masscan():
 
 @task
 def install_masscan():
-    "Take all steps to compile and install masscan remotely"
+    "Compile masscan locally and install remotely"
     compile_masscan()
     copy_masscan()
     configure_masscan()
+    # don't worry about cleaning up the local masscan binary
 
 @task
 def reboot():
-    "Reboot all machines. Doesn't wait."
+    "Reboot. Doesn't wait."
     sudo('reboot now')
 
-@task
+@task(default=True)
+@roles('survey')
 def configure_survey():
-    "Run all configuration steps to set up a survey slave"
+    "Run all configuration to set up survey slave"
     install_debs()
+    configure_upgrades()
     set_timezone()
     install_pip()
     install_tasa()
@@ -117,3 +135,16 @@ def configure_survey():
     install_masscan()
 
     reboot()
+
+
+@task
+@roles('survey')
+def check_networking():
+    sudo('ethtool -k eth0')
+    sudo('ethtook -k eth1')
+
+@task
+@roles('survey')
+@parallel
+def quick_masscan():
+    sudo('masscan --rate=1000000 --shard=1/100 -oB /dev/null')
