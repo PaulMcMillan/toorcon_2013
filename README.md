@@ -1,2 +1,4 @@
-toorcon_2013_talk
+Toorcon 2013 Talk
 =================
+
+Contains configuration scripts, examples, and of course the talk notes.
