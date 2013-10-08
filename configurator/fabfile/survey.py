@@ -148,3 +148,7 @@ def check_networking():
 @parallel
 def quick_masscan():
     sudo('masscan --rate=1000000 --shard=1/100 -oB /dev/null')
+
+@task
+def deploy_looksee():
+    put('looksee')
