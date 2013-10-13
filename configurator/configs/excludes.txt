@@ -37,6 +37,8 @@
 # Limited Broadcast
 255.255.255.255/32
 
+#RFC 5771: Multicast/Reserved
+224.0.0.0/4
 
 # Exclusion requests
 
