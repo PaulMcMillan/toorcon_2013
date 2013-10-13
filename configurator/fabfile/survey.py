@@ -69,9 +69,12 @@ def configure_collectd():
 def configure_nginx():
     "Configure nginx"
     sudo('rm /etc/nginx/sites-enabled/*')
-    put('configs/redir_to_main.nginx',
-        '/etc/nginx/sites-enabled/redir_to_main',
+    put('configs/optout.nginx',
+        '/etc/nginx/sites-enabled/optout',
         use_sudo=True)
+    sudo('mkdir -p /usr/share/nginx/www')
+    put('configs/optout.html',
+        '/usr/share/nginx/www/index.html')
     sudo('service nginx restart')
 
 @task

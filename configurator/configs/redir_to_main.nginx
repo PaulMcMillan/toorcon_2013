@@ -1,3 +1,0 @@
-server {
-       return 301 https://survey.tx.ai;
-}

@@ -1,0 +1,4 @@
+server {
+       root /usr/share/nginx/www;
+       index index.html;
+}
