@@ -9,6 +9,7 @@ env.roledefs['survey'] = [
     's1.survey.tx.ai',
     's2.survey.tx.ai',
     's3.survey.tx.ai',
+    's4.survey.tx.ai',
     ]
 
 DEBS = ['emacs23-nox',
@@ -118,12 +119,14 @@ def install_masscan():
 @task
 def reboot():
     "Reboot. Doesn't wait."
-    sudo('reboot now')
+    sudo('shutdown -r 0')
 
 @task(default=True)
 @roles('survey')
 def configure_survey():
     "Run all configuration to set up survey slave"
+    install_masscan()  # do this first because it uses local sudo
+
     install_debs()
     configure_upgrades()
     set_timezone()
@@ -131,8 +134,6 @@ def configure_survey():
     install_tasa()
     configure_collectd()
     configure_nginx()
-
-    install_masscan()
 
     reboot()
 
