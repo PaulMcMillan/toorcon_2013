@@ -11,12 +11,13 @@ import time
 
 import tasa
 from tasa.store import Queue
+from tasa.utils import iterit
 from tasa.worker import BaseWorker
 
 
 class MasscanWorker(BaseWorker):
     qinput = Queue('masscan')
-    qoutput = None
+    qoutput = Queue('masscan_out')
 
     def run(self, job):
         """ Job is in the form [seed, shards-string, port].
@@ -27,9 +28,10 @@ class MasscanWorker(BaseWorker):
                    '--shards', job[1],
                    '--ports', job[2],
                    ]
-        proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(iterit(command, cast=str),
+                                stdout=subprocess.PIPE)
         for line in proc.stdout:
-            yield line
+            yield line.strip()
 
 
 def insert_job():
