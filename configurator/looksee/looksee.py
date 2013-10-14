@@ -5,9 +5,11 @@ survey queue.
 """
 
 import argparse
-import subprocess
 import imp
+import subprocess
+import time
 
+import tasa
 from tasa.store import Queue
 from tasa.worker import BaseWorker
 
@@ -30,19 +32,27 @@ class MasscanWorker(BaseWorker):
             yield line
 
 
-def insert_job(config):
-    pass
+def insert_job():
+    seed = int(time.time())
+    total_shards = tasa.conf.shards
+    jobs = []
+    for shard in range(1, total_shards + 1):
+        jobs.append(
+            [seed, '%d/%d' % (shard, total_shards), tasa.conf.ports])
+    MasscanWorker.qinput.send(*jobs)
 
-# Since this is used as both a module and a shell script...
+
+# Since this is used as both a module and a shell script, only parse
+# arguments if it is called directly...
 if __name__ == '__main__':
     # Don't worry too closely about this junk for now. It's what
     # creates the CLI, and is ugly and long and documented here:
     # http://docs.python.org/2.7/library/argparse.html
     # For exploration and one-off data gathering, hardcode values
-    # until you know you need them to be configurable.
+    # until you know they need to be configurable.
     parser = argparse.ArgumentParser()
     parser.add_argument('--redis',
-                        default='redis://localhost:6379/01',
+                        default='redis://localhost:6379/0',
                         help="Redis connection string in form: "
                         "redis://password@example.org:6379/0")
     subparsers = parser.add_subparsers(help="sub-command help.")
@@ -51,8 +61,8 @@ if __name__ == '__main__':
     parser_insert = subparsers.add_parser('insert',
         help="Insert a masscan job for distributed processing.")
     parser_insert.set_defaults(func=insert_job)
-    parser_insert.add_argument('port',
-                        help="Port to scan. In one of the forms 80, 5000-6000,"
+    parser_insert.add_argument('ports',
+                        help="Ports to scan. In one of the forms 80, 5000-6000,"
                         " or 80,5000,8001.")
     parser_insert.add_argument('--range', default='0.0.0.0/0',
                         help="IPv4 address or range to scan. One of "
@@ -72,15 +82,9 @@ if __name__ == '__main__':
     parser_job.add_argument('--all', action='store_true',
                             help="Wipe all jobs from redis.")
 
-    # Try to load a python config file in a slightly unorthodox fashion
-    # TODO: Move this into tasa proper
-    try:
-        tasa_conf = imp.load_source('tasa.conf', '/etc/tasa/tasa.conf')
-    except IOError:
-        tasa_conf = argparse.Namespace()
-
     # Parse our arguments, overriding anything found in the
     # conf file
-    args = parser.parse_args(namespace=tasa_conf)
+    parser.parse_args(namespace=tasa.conf)
     #from pprint import pprint
-    #pprint(vars(args))
+    #pprint(vars(tasa.conf))
+    tasa.conf.func()
