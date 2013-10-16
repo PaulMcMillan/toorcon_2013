@@ -125,7 +125,7 @@ def reboot():
     sudo('shutdown -r 0')
 
 @task(default=True)
-@roles('survey')
+#@roles('survey')
 def configure_survey():
     "Run all configuration to set up survey slave"
     install_masscan()  # do this first because it uses local sudo

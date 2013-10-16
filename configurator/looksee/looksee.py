@@ -6,8 +6,10 @@ survey queue.
 
 import argparse
 import imp
+import re
 import subprocess
 import time
+from base64 import b64encode
 
 import tasa
 from tasa.store import Queue
@@ -31,7 +33,38 @@ class MasscanWorker(BaseWorker):
         proc = subprocess.Popen(iterit(command, cast=str),
                                 stdout=subprocess.PIPE)
         for line in proc.stdout:
-            yield line.strip()
+            match = re.match(
+                'Discovered open port (\d+)/(\w+) on (\d+\.\d+\.\d+\.\d+)',
+                line.strip())
+            if match:
+                yield match.groups()
+
+import socket
+
+class RFBFingerprinter(BaseWorker):
+    qinput = Queue('masscan_out')
+    qoutput = Queue('RFB_Fingerprints')
+
+    def run(self, job):
+        port, proto, ip = job
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(1)
+        try:
+            s.connect((ip, int(port)))
+            rfb_proto = s.recv(1024)
+            # mirror the chosen protocol back to the sender
+            s.sendall(rfb_proto)
+            security_proto = s.recv(1024)
+            if rfb_proto == 'RFB 003.003\n':
+                follow_data = ''
+            else:
+                s.sendall('\x01')  # try no security
+                follow_data = s.recv(1024)
+            s.close()
+            yield (ip, port, repr(rfb_proto), repr(security_proto),
+                   repr(follow_data))
+        except Exception:
+            pass
 
 
 def insert_job():
@@ -73,9 +106,9 @@ if __name__ == '__main__':
                         "198.51.100.0-198.51.100.125, "
                         "or 203.0.113.0/24. "
                         "Default 0.0.0.0/0.")
-    parser_insert.add_argument('--shards', default='200', type=int,
+    parser_insert.add_argument('--shards', default='100', type=int,
                         help="Number of shards to split the scan into. "
-                        "Default 200.")
+                        "Default 100.")
 
     # Create our job control subparser
     parser_job = subparsers.add_parser('wipe',
