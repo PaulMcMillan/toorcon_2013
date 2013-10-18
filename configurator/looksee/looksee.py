@@ -10,9 +10,11 @@ import re
 import subprocess
 import time
 from base64 import b64encode
+import socket
+
 
 import tasa
-from tasa.store import Queue
+from tasa.store import Queue, PickleQueue
 from tasa.utils import iterit
 from tasa.worker import BaseWorker
 
@@ -39,32 +41,35 @@ class MasscanWorker(BaseWorker):
             if match:
                 yield match.groups()
 
-import socket
 
 class RFBFingerprinter(BaseWorker):
     qinput = Queue('masscan_out')
-    qoutput = Queue('RFB_Fingerprints')
+    qoutput = PickleQueue('rfb_print')
 
     def run(self, job):
         port, proto, ip = job
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(1)
+        output = []
         try:
             s.connect((ip, int(port)))
-            rfb_proto = s.recv(1024)
-            # mirror the chosen protocol back to the sender
+            rfb_proto = s.recv(512)
+            output.append(rfb_proto)
+            # mirror the specified protocol back to the sender
             s.sendall(rfb_proto)
-            security_proto = s.recv(1024)
-            if rfb_proto == 'RFB 003.003\n':
-                follow_data = ''
-            else:
-                s.sendall('\x01')  # try no security
-                follow_data = s.recv(1024)
+            security_proto = s.recv(512)
+            output.append(security_proto)
+            if rfb_proto != 'RFB 003.003\n':
+                s.sendall('\x01')  # try no security, regardless of choices
+                follow_data = s.recv(512)
+                output.append(follow_data)
             s.close()
-            yield (ip, port, repr(rfb_proto), repr(security_proto),
-                   repr(follow_data))
         except Exception:
             pass
+
+        if output:
+            # (ip, port, rfb_proto, security_proto, follow_data)
+            yield [ip, port] + apply(b64encode, output)
 
 
 def insert_job():
