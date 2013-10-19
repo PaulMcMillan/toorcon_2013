@@ -10,6 +10,10 @@ env.roledefs['survey'] = [
     's2.survey.tx.ai',
     's3.survey.tx.ai',
     's4.survey.tx.ai',
+    's5.survey.tx.ai',
+    's6.survey.tx.ai',
+    's7.survey.tx.ai',
+    's8.survey.tx.ai',
     ]
 
 DEBS = ['emacs23-nox',
@@ -58,6 +62,12 @@ def install_pip():
 def install_tasa():
     "Install tasa."
     sudo('pip install -U tasa')
+
+@task
+def configure_tasa():
+    "Configure tasa."
+    sudo('mkdir -p /etc/tasa')
+    put('configs/tasa.conf', '/etc/tasa/tasa.conf')
 
 @task
 def configure_collectd():
@@ -148,11 +158,6 @@ def check_networking():
     sudo('ethtook -k eth1')
 
 @task
-@roles('survey')
-@parallel
-def quick_masscan():
-    sudo('masscan --rate=1000000 --shard=1/100 -oB /dev/null')
-
-@task
 def deploy_looksee():
+    sudo('pip install -U pyrax')
     put('looksee')
