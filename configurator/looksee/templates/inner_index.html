@@ -1,0 +1,12 @@
+<html>
+<head>
+<title>Survey Results</title>
+</head>
+<body>
+{% for file in files %}
+<p>
+<img href="{{base_uri}}/{{file}}"></img>
+</p>
+{% endfor %}
+</body>
+</html>

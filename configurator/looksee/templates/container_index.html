@@ -1,0 +1,12 @@
+<html>
+<head>
+<title>Survey Results</title>
+</head>
+<body>
+{% for container in containers | sort %}
+<p>
+<a href="/{{ container }}.html">{{ container }}</a>
+  - {{ container.files | count }}</p>
+{% endfor %}
+</body>
+</html>
