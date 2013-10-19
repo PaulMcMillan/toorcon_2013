@@ -5,16 +5,6 @@ import os
 from fabric.api import *
 
 env.use_ssh_config = True
-env.roledefs['survey'] = [
-    's1.survey.tx.ai',
-    's2.survey.tx.ai',
-    's3.survey.tx.ai',
-    's4.survey.tx.ai',
-    's5.survey.tx.ai',
-    's6.survey.tx.ai',
-    's7.survey.tx.ai',
-    's8.survey.tx.ai',
-    ]
 
 DEBS = ['emacs23-nox',
         'unattended-upgrades',
@@ -135,7 +125,6 @@ def reboot():
     sudo('shutdown -r 0')
 
 @task(default=True)
-#@roles('survey')
 def configure_survey():
     "Run all configuration to set up survey slave"
     install_masscan()  # do this first because it uses local sudo
@@ -152,12 +141,6 @@ def configure_survey():
 
 
 @task
-@roles('survey')
 def check_networking():
     sudo('ethtool -k eth0')
     sudo('ethtook -k eth1')
-
-@task
-def deploy_looksee():
-    sudo('pip install -U pyrax')
-    put('looksee')
