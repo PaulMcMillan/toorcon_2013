@@ -80,7 +80,6 @@ class RFBFingerprinter(BaseWorker):
 
 class ScreenshotWorker(BaseWorker):
     qinput = PickleQueue('rfb_print')
-    qoutput = Queue('taken_screenshots')
 
     def __init__(self, *args, **kwargs):
         super(ScreenshotWorker, self).__init__(*args, **kwargs)
@@ -165,18 +164,25 @@ def render_output_website():
     """
     from jinja2 import Environment, PackageLoader
     env = Environment(loader=PackageLoader('looksee', 'templates'))
+    queues = []
+
     connection = tasa.store.connection
     containers = {}
     uris = connection.hgetall('container_uris')
     for key, value in uris.items():
         containers[key] = {'uri': value}
     pipe = connection.pipeline()
+    queue_names = ['masscan', 'masscan_out', 'rfb_print']
+    for name in queue_names:
+        pipe.llen(name)
+    queue_lengths = pipe.execute()
+    queues = zip(queue_names, queue_lengths)
     for key in uris.keys():
         pipe.hgetall('container_' + key)
     for key, value in zip(uris.keys(), pipe.execute()):
         containers[key]['files'] = value
     template = env.get_template('container_index.html')
-    rendered = template.render(containers=containers)
+    rendered = template.render(containers=containers, queues=queues)
     with open('www/index.html', 'w') as f:
         f.write(rendered)
     template = env.get_template('inner_index.html')

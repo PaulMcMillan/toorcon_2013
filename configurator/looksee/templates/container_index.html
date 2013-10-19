@@ -3,6 +3,11 @@
 <title>Survey Results</title>
 </head>
 <body>
+<h2>Queue Lengths:</h2>
+{% for name, length in queues %}
+{{ name }}: {{length}}</br>
+{% endfor %}
+<h2>Results Buckets</h2>
 <p>
 {% for container, value in containers.iteritems() %}
 <a href="{{ container }}.html">{{ container }}</a>
