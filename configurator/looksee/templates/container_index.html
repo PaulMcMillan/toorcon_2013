@@ -3,10 +3,11 @@
 <title>Survey Results</title>
 </head>
 <body>
-{% for container in containers | sort %}
 <p>
-<a href="/{{ container }}.html">{{ container }}</a>
-  - {{ container.files | count }}</p>
+{% for container, value in containers.iteritems() %}
+<a href="{{ container }}.html">{{ container }}</a>
+  - {{ value.files | count}}<br>
 {% endfor %}
+</p>
 </body>
 </html>

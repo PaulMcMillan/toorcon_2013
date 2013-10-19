@@ -152,7 +152,7 @@ def create_containers():
         cont_name = str(subnet)
         container = pyrax.cloudfiles.create_container(cont_name)
         pyrax.cloudfiles.make_container_public(container)
-#        container.delete_all_objects()
+#        container.delete_all_objects()  # this takes too long
         connection.hset('container_uris', cont_name, container.cdn_uri)
         print "Created container: ", subnet
     print "Finished creating containers."
@@ -176,11 +176,15 @@ def render_output_website():
     for key, value in zip(uris.keys(), pipe.execute()):
         containers[key]['files'] = value
     template = env.get_template('container_index.html')
-    print template.render(containers=containers)
+    rendered = template.render(containers=containers)
+    with open('www/index.html', 'w') as f:
+        f.write(rendered)
     template = env.get_template('inner_index.html')
     for key in containers.keys():
-        print template.render(base_uri=containers[key]['uri'],
-                              files = containers[key]['files'])
+        rendered = template.render(base_uri=containers[key]['uri'],
+                                   files = containers[key]['files'])
+        with open('www/%s.html' % key, 'w') as f:
+            f.write(rendered)
 
 # Since this is used as both a module and a shell script, only parse
 # arguments if it is called directly...
@@ -236,6 +240,4 @@ if __name__ == '__main__':
     # Parse our arguments, overriding anything found in the
     # conf file
     parser.parse_args(namespace=tasa.conf)
-    #from pprint import pprint
-    #pprint(vars(tasa.conf))
     tasa.conf.func()

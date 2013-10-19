@@ -3,9 +3,9 @@
 <title>Survey Results</title>
 </head>
 <body>
-{% for file in files %}
+{% for file, info in files.iteritems() %}
 <p>
-<img href="{{base_uri}}/{{file}}"></img>
+<img src="{{base_uri}}/{{file}}"></img>
 </p>
 {% endfor %}
 </body>
