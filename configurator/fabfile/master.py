@@ -59,4 +59,4 @@ def install_redis():
     compile_redis()
     configure_redis()
     copy_redis()
-    sudo('service redis restart')
+    sudo('service redis restart', warn_only=True)

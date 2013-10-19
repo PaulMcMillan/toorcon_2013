@@ -27,6 +27,8 @@ class MasscanWorker(BaseWorker):
     qinput = Queue('masscan')
     qoutput = Queue('masscan_out')
 
+    chunk_size=300
+
     def run(self, job):
         """ Job is in the form [seed, shards-string, port].
         e.g. [213850, '4/10', 80]
@@ -98,7 +100,8 @@ class ScreenshotWorker(BaseWorker):
         # can we authenticate with no password?
         if '\x01' in security_protos:
             # then let's try taking a picture
-            command = ['vncsnapshot',
+            command = ['timeout', '10',  # make sure it doesn't hang
+                       'vncsnapshot',
                        '-passwd', '/dev/null',  # fail if passwd reqested
                        '-quality', '70',
                        '-vncQuality', '7',
@@ -117,8 +120,6 @@ class ScreenshotWorker(BaseWorker):
                 # store our result in the cloud
                 container = ip.split('.')[0]
                 file_name = ip + '_' + port + '.jpg'
-                print container, file_name
-                exit
                 pyrax.cloudfiles.store_object(container,
                                               file_name,
                                               stdout,
@@ -164,8 +165,6 @@ def render_output_website():
     """
     from jinja2 import Environment, PackageLoader
     env = Environment(loader=PackageLoader('looksee', 'templates'))
-    queues = []
-
     connection = tasa.store.connection
     containers = {}
     uris = connection.hgetall('container_uris')

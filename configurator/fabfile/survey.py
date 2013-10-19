@@ -104,6 +104,9 @@ def configure_masscan():
         use_sudo=True)
     put('configs/excludes.txt', '/etc/masscan/excludes.txt',
         use_sudo=True)
+    put('configs/masscan.upstart', '/etc/init/masscan.conf',
+        use_sudo=True)
+    sudo('service masscan restart', warn_only=True)
 
 @task
 def copy_masscan():

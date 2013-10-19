@@ -7,6 +7,8 @@
 {% for name, length in queues %}
 {{ name }}: {{length}}</br>
 {% endfor %}
+<h2>Packets per second</h2>
+<img src="http://stats.survey.tx.ai:8080/render/?width=586&height=308&_salt=1381903153.505&lineMode=connected&from=-5minutes&target=alias(sum(summarize(*.interface.if_packets-*.tx,%223sec%22,'avg')),'pps')"></img>
 <h2>Results Buckets</h2>
 <p>
 {% for container, value in containers.iteritems() %}
